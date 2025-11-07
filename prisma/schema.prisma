@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum AuthProviderType {
+  GOOGLE
+  CREDENTIAL
+ }
+
+ enum SocialPlatforms {
+  LIKENDIN
+  TWITTER
+  FACEBOOK
+ }
+
+ enum PostStatus {
+  UPLOADED
+  PENDING
+  DARFT 
+  FAILED
+ }
+
+ enum PlatfromPostStatus {
+  PENDING
+  POSTED
+  FAILED
+}
+
+ model User {
+  id  String @id @default(cuid())
+  name String
+  email String
+  password String?
+  provider_id String?
+  provider AuthProviderType
+  profile_picture String?
+  refresh_token String
+  createdAt DateTime @default(now())
+  updatedAt DateTime  @updatedAt()
+
+  // Relations
+
+  connected_accounts SocialAccount[]
+  posts Post[]
+  platform_post PlatformPost[]
+ }
+
+ model SocialAccount {
+  id String @id @default(cuid())
+  owner_id String
+  platform  SocialPlatforms
+  platform_userid String
+  username String?
+  display_name String?
+  profile_picture String?
+  access_token String
+  refresh_token String
+  token_expiry DateTime
+  platformData Json? @default("{}")
+  isActive Boolean @default(true)
+  lastSync DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  // relation
+  owner User @relation(fields:[owner_id], references:[id], onDelete:Cascade)
+  platform_post PlatformPost[]
+
+
+  @@index([owner_id])
+  @@index([platform])
+ }
+
+ model Post {
+  id String @id @default(cuid())
+  owner_id String
+  content String?
+  mediaUrl String?
+  status PostStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  owner User @relation(fields:[owner_id], references:[id], onDelete:Cascade)
+  platform_post PlatformPost[]
+    @@index([owner_id, status])
+ }
+
+ model PlatformPost {
+  id String @id @default(cuid())
+  post_id String
+  owner_id String
+  platform String
+  account_id String
+  platform_post_id String
+  platform_post_url String
+  error String
+  status PlatfromPostStatus
+  postedAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  post Post @relation(fields:[post_id], references:[id], onDelete:Cascade)
+  social_account SocialAccount @relation(fields:[account_id], references:[id], onDelete:Cascade)
+  owner User @relation(fields:[owner_id], references:[id], onDelete:Cascade)
+
+  @@index([post_id])
+  @@index([account_id])
+ }
+
+
+ 
