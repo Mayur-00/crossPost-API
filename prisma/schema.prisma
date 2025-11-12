@@ -40,14 +40,14 @@ enum AuthProviderType {
 }
 
  model User {
-  id  String @id @default(cuid())
+  id  String @id @default(cuid()) @unique
   name String
-  email String
+  email String @unique
   password String?
   provider_id String?
   provider AuthProviderType
   profile_picture String?
-  refresh_token String
+  refresh_token String?
   createdAt DateTime @default(now())
   updatedAt DateTime  @updatedAt()
 
