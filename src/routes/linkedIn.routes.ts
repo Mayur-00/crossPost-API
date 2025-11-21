@@ -1,9 +1,11 @@
 import express from 'express';
 import { authorize } from '../middlewares/auth.middleware';
-import { postTextLinkedin } from '../controllers/socialAccounts.controller';
+import { postLinkedin } from '../controllers/socialAccounts.controller';
+import { upload } from '../config/multerr.config';
+
 const router = express();
 
-router.post('/post', authorize, postTextLinkedin);
+router.post('/post', authorize, upload.single('image'),  postLinkedin);
 
 
-export default router
+export default router;
