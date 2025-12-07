@@ -1,5 +1,4 @@
-import prisma from "../config/prisma"
-
+import prisma from '../config/prisma';
 
 const connectDb = async () => {
   try {

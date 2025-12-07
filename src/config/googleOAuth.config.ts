@@ -1,3 +1,3 @@
-import { OAuth2Client } from "google-auth-library";
+import { OAuth2Client } from 'google-auth-library';
 
-export const googleAuthClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+export const googleAuthClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);

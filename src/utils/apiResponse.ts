@@ -1,8 +1,8 @@
 interface IApiResponse {
-    statusCode:number;
-    data:any;
-    message:string;
-    success:boolean ;
+  statusCode: number;
+  data: any;
+  message: string;
+  success: boolean;
 }
 
 export class ApiResponse implements IApiResponse {
@@ -11,11 +11,10 @@ export class ApiResponse implements IApiResponse {
   message: string;
   success: boolean;
 
-  constructor(statusCode: number, data: any, message = "Success") {
+  constructor(statusCode: number, data: any, message = 'Success') {
     this.statusCode = statusCode;
     this.data = data;
     this.message = message;
     this.success = statusCode < 400;
   }
 }
-

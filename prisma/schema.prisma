@@ -11,6 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // url = env("DATABASE_URL")
 
 }
 
@@ -23,15 +24,20 @@ datasource db {
  enum SocialPlatforms {
   LINKEDIN
   LIKENDIN
-  TWITTER
+  X
   FACEBOOK
  }
 
  enum PostStatus {
+  CREATED
   UPLOADED
   PENDING
   DARFT 
   FAILED
+ }
+ enum Provieder {
+  X
+  LINKEDIN
  }
 
  enum PlatfromPostStatus {
@@ -57,6 +63,7 @@ datasource db {
   connected_accounts SocialAccount[]
   posts Post[]
   platform_post PlatformPost[]
+  Auth_sessions OAuthSession[]
  }
 
  model SocialAccount {
@@ -91,6 +98,7 @@ datasource db {
   owner_id String
   content String?
   mediaUrl String?
+  mediaType String?
   status PostStatus
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
@@ -104,7 +112,7 @@ datasource db {
   id String @id @default(cuid())
   post_id String 
   owner_id String 
-  platform String
+  platform SocialPlatforms
   account_id String
   platform_post_id String
   platform_post_url String?
@@ -120,6 +128,22 @@ datasource db {
 
   @@index([post_id])
   @@index([account_id])
+ }
+
+ model OAuthSession {
+id            String   @id @default(cuid())
+  ownerid       String 
+  provider      SocialPlatforms
+  state         String   @unique
+  codeVerifier  String?   // PKCE code_verifier
+  used          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime @default(dbgenerated("NOW() + INTERVAL '10 MINUTES'"))
+
+  owner         User     @relation(fields: [ownerid], references: [id], onDelete: Cascade)
+
+  @@index([ownerid])
+  @@index([state])
  }
 
 

@@ -6,12 +6,7 @@ class ApiError extends Error implements IApiError {
   errors: any[];
   stack?: string | undefined;
 
-  constructor(
-    statusCode: number,
-    message = "Something Went wrong",
-    error: any[] = [],
-    stack = ""
-  ) {
+  constructor(statusCode: number, message = 'Something Went wrong', error: any[] = [], stack = '') {
     super(message);
     this.statusCode = statusCode;
     this.message = message;
@@ -22,7 +17,7 @@ class ApiError extends Error implements IApiError {
     if (stack) {
       this.stack = stack;
     } else {
-      Error.captureStackTrace(this, this.constructor)
+      Error.captureStackTrace(this, this.constructor);
     }
   }
 }
@@ -33,7 +28,7 @@ interface IApiError {
   data: any | null;
   success: boolean;
   errors: any[];
-  stack?:string | undefined
+  stack?: string | undefined;
 }
 
 export { ApiError, IApiError };

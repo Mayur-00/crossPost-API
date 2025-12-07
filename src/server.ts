@@ -1,6 +1,5 @@
-import {app} from './app'
+import { app } from './app';
 import connectDb from './lib/db';
-
 
 connectDb()
   .then(() => {

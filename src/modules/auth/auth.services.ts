@@ -1,30 +1,17 @@
-import { Logger } from "winston";
-import {
-  PlatformPost,
-  PrismaClient,
-  SocialAccount,
-  User,
-} from "../../generated/prisma/client";
-import axios, { Axios } from "axios";
-import {
-  AuthClient,
-  GoogleAuth,
-  GoogleAuthOptions,
-  OAuth2Client,
-} from "google-auth-library";
-import { ApiError } from "../../utils/apiError";
-import { providerEnum } from "./auth.types";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { myJwtPayload } from "../../middlewares/auth.middleware";
+import { Logger } from 'winston';
+import { PrismaClient, User } from '../../generated/prisma/client';
+import { OAuth2Client } from 'google-auth-library';
+import { ApiError } from '../../utils/apiError';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { myJwtPayload } from '../../middlewares/auth.middleware';
 
 export class UserServices {
   constructor(
     private prisma: PrismaClient,
     private logger: Logger,
-    private httpClient: Axios = axios,
     private googleClient: OAuth2Client,
-    private googleClientId: string
+    private googleClientId: string,
   ) {}
 
   async verifyGoogleIdTokn(token: string) {
@@ -38,8 +25,8 @@ export class UserServices {
 
       return payload;
     } catch (error) {
-      this.logger.error("id token verification failed", { error: error });
-      throw new ApiError(500, "internal server error");
+      this.logger.error('id token verification failed', { error: error });
+      throw new ApiError(500, 'internal server error');
     }
   }
 
@@ -51,10 +38,10 @@ export class UserServices {
         },
       });
     } catch (error) {
-      this.logger.error("an error occored while fetching user", {
+      this.logger.error('an error occored while fetching user', {
         error: error,
       });
-      throw new ApiError(500, "internal server error");
+      throw new ApiError(500, 'internal server error');
     }
   }
   async getUserByIdWithConnectedAccounts(id: string) {
@@ -75,10 +62,10 @@ export class UserServices {
         },
       });
     } catch (error) {
-      this.logger.error("an error occored while fetching user", {
+      this.logger.error('an error occored while fetching user', {
         error: error,
       });
-      throw new ApiError(500, "internal server error");
+      throw new ApiError(500, 'internal server error');
     }
   }
   async getUserByEmail(email: string) {
@@ -89,10 +76,10 @@ export class UserServices {
         },
       });
     } catch (error) {
-      this.logger.error("an error occored while fetching user", {
+      this.logger.error('an error occored while fetching user', {
         error: error,
       });
-      throw new ApiError(500, "internal server error");
+      throw new ApiError(500, 'internal server error');
     }
   }
 
@@ -103,7 +90,7 @@ export class UserServices {
     password?: string,
     providerid?: string,
     profilePic?: string,
-    refreshToken?: string
+    refreshToken?: string,
   ): Promise<User> {
     try {
       let hashedPassword;
@@ -115,7 +102,7 @@ export class UserServices {
         data: {
           name: name,
           email: email,
-          provider: provider === "GOOGLE" ? "GOOGLE" : "CREDENTIAL",
+          provider: provider === 'GOOGLE' ? 'GOOGLE' : 'CREDENTIAL',
           password: hashedPassword,
           provider_id: providerid,
           profile_picture: profilePic,
@@ -125,10 +112,10 @@ export class UserServices {
 
       return user;
     } catch (error) {
-      this.logger.error("an error occured during user creation", {
+      this.logger.error('an error occured during user creation', {
         error: error,
       });
-      throw new ApiError(500, "internal server error");
+      throw new ApiError(500, 'internal server error');
     }
   }
   async updateUser(
@@ -136,7 +123,7 @@ export class UserServices {
     provider: string,
     providerid?: string,
     profilePic?: string,
-    refreshToken?: string
+    refreshToken?: string,
   ): Promise<User> {
     try {
       const user = await this.prisma.user.update({
@@ -145,7 +132,7 @@ export class UserServices {
         },
 
         data: {
-          provider: provider === "GOOGLE" ? "GOOGLE" : "CREDENTIAL",
+          provider: provider === 'GOOGLE' ? 'GOOGLE' : 'CREDENTIAL',
           provider_id: providerid,
           profile_picture: profilePic,
           refresh_token: refreshToken,
@@ -154,17 +141,14 @@ export class UserServices {
 
       return user;
     } catch (error) {
-      this.logger.error("an error occured during user creation", {
+      this.logger.error('an error occured during user creation', {
         error: error,
       });
-      throw new ApiError(500, "internal server error");
+      throw new ApiError(500, 'internal server error');
     }
   }
 
-  async updateUsersRefreshToken(
-    userid: string,
-    refreshToken: string
-  ): Promise<User> {
+  async updateUsersRefreshToken(userid: string, refreshToken: string): Promise<User> {
     try {
       return await this.prisma.user.update({
         where: {
@@ -175,10 +159,10 @@ export class UserServices {
         },
       });
     } catch (error) {
-      this.logger.error("an error occured while updating user", {
+      this.logger.error('an error occured while updating user', {
         error: error,
       });
-      throw new ApiError(500, "internal server error");
+      throw new ApiError(500, 'internal server error');
     }
   }
   async clearUsersRefreshToken(userid: string) {
@@ -188,28 +172,40 @@ export class UserServices {
           id: userid,
         },
         data: {
-          refresh_token: "",
+          refresh_token: '',
         },
       });
 
       return updated;
     } catch (error) {
-      this.logger.error("an error occured while clearing token", {
+      this.logger.error('an error occured while clearing token', {
         error: error,
       });
-      throw new ApiError(500, "internal server error");
+      throw new ApiError(500, 'internal server error');
     }
   }
 
   async verifyRefreshToken(refreshToken: string) {
     try {
-      return (await jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET!
-      )) as myJwtPayload;
+      return (await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!)) as myJwtPayload;
     } catch (error) {
-      this.logger.error("token didn't verify");
-      throw new ApiError(401, "token expired or invalid");
+      this.logger.error("token didn't verify", { error: error });
+      throw new ApiError(401, 'token expired or invalid');
     }
+  }
+  async verifyPassword(new_password: string, user_password: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(new_password, user_password);
+    } catch (error) {
+      this.logger.error("token didn't verify", { error: error });
+      throw new ApiError(401, 'token expired or invalid');
+    }
+  };
+  async DeleteAccount(userId:string){
+    return await this.prisma.user.delete({
+      where:{
+        id:userId
+      }
+    })
   }
 }
