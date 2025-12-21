@@ -1,5 +1,6 @@
 import { platform } from "os";
 import z from "zod";
+import { PlatfromPostStatus } from "../../generated/prisma/enums.js";
 
 
 export const XCallbackSchema = z.object({
@@ -29,7 +30,7 @@ export interface TweetResponse {
 export interface TweetDbRecord {
   ownerId:string;
   postId:string;
-  xAccountId:string;
-  tweetId:string
+  status:PlatfromPostStatus
+  tweetId?:string
   
 }

@@ -22,7 +22,7 @@ export const authorize: RequestHandler = asyncHandler(
       throw new ApiError(401, 'Unauthorized request');
     }
 
-    try {
+    
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as myJwtPayload;
 
       const user = await prisma.user.findUnique({
@@ -40,10 +40,7 @@ export const authorize: RequestHandler = asyncHandler(
       req.user = user;
 
       next();
-    } catch (error) {
-      logger.error('error in auth middleware', { error: error });
-      throw new ApiError(401, 'Invalid access token');
-    }
+    
   },
 );
 

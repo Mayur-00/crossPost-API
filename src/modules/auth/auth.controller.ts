@@ -276,5 +276,5 @@ export class AuthController {
       .clearCookie('accessToken', options)
       .clearCookie('refreshToken', options)
       .json(new ApiResponse(200, {}, 'Account Deleted Successfully'));
-  })
+  });
 }

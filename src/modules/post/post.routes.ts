@@ -11,12 +11,18 @@ export function createPostRoutes(controller: PostController): Router {
 
 
   // Post creation (requires authentication and file upload)
+  
   router.post(
     '/create',
     authorize,
     upload.single('image'), 
     controller.publishPostMultiplePlatforms,
   );
-  
+  router.post(
+    '/publish-post',
+    authorize,
+    upload.single('image'),
+    controller.publishPostMultiplePlatformsQueued,
+  );
   return router;
 }

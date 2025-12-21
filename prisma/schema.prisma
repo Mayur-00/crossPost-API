@@ -86,7 +86,6 @@ datasource db {
 
   // relation
   owner User @relation(fields:[owner_id], references:[id], onDelete:Cascade)
-  platform_post PlatformPost[]
 
 
   @@index([owner_id])
@@ -113,8 +112,7 @@ datasource db {
   post_id String 
   owner_id String 
   platform SocialPlatforms
-  account_id String
-  platform_post_id String
+  platform_post_id String?
   platform_post_url String?
   error String?
   status PlatfromPostStatus
@@ -123,11 +121,9 @@ datasource db {
   updatedAt DateTime @updatedAt()
 
   post Post @relation(fields:[post_id], references:[id], onDelete:Cascade)
-  social_account SocialAccount @relation(fields:[account_id], references:[id], onDelete:Cascade)
   owner User @relation(fields:[owner_id], references:[id], onDelete:Cascade)
 
   @@index([post_id])
-  @@index([account_id])
  }
 
  model OAuthSession {

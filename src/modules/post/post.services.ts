@@ -38,6 +38,7 @@ export class PostService {
         data: {
           content: new_content,
           mediaUrl: new_media_url,
+          status:'UPLOADED'
         },
       });
     } catch (error) {

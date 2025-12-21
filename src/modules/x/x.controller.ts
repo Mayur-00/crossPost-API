@@ -107,8 +107,8 @@ export class XController {
     const data:TweetDbRecord ={
       ownerId:req.user.id,
       postId:post_id,
+      status:'POSTED',
       tweetId: response.data.id,
-      xAccountId:account.id
     }
  await this.XServices.createTweetDbRecord(data);
 

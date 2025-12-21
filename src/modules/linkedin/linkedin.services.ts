@@ -9,7 +9,7 @@ import {
   LinkedinUserInfoType,
 } from './linkedin.types.js';
 import { ApiError } from '../../utils/apiError.js';
-import { PlatformPost, Post, PrismaClient, SocialAccount } from '../../generated/prisma/client.js';
+import { PlatformPost, PlatfromPostStatus, Post, PrismaClient, SocialAccount } from '../../generated/prisma/client.js';
 
 export class linkedinServices {
   constructor(
@@ -364,9 +364,9 @@ export class linkedinServices {
   async createLinkedinPostDatabaseRecord(
     user_id: string,
     post_id: string,
-    linkedin_account_id: string,
-    linkedin_post_id: string,
-    posted_at: Date,
+    status:PlatfromPostStatus,
+    linkedin_post_id?: string,
+    posted_at?: Date,
   ): Promise<PlatformPost> {
     try {
       const post = await this.prisma.platformPost.create({
@@ -374,11 +374,10 @@ export class linkedinServices {
           post_id: post_id,
           owner_id: user_id,
           platform: 'LINKEDIN',
-          account_id: linkedin_account_id,
-          platform_post_id: linkedin_post_id,
-          platform_post_url: `https://www.linkedin.com/feed/update/${linkedin_post_id}/`,
-          status: 'POSTED',
-          postedAt: posted_at,
+          platform_post_id: linkedin_post_id || '',
+          platform_post_url: `https://www.linkedin.com/feed/update/${linkedin_post_id}/ ` || '',
+          status: status,
+          postedAt: posted_at || '',
         },
       });
 
@@ -434,6 +433,45 @@ export class linkedinServices {
     } catch (error) {
       this.logger.error('an error occured while getting the post', { error: error });
       throw new ApiError(500, 'internal server error');
+    }
+  }
+
+  async validateAccessToken(account:SocialAccount){
+    try {
+      const now = Date.now();
+
+      const isExpired = !account.token_expiry || account.token_expiry.getTime() <= now;
+
+      if(isExpired){
+        await this.prisma.socialAccount.delete({
+          where:{
+            id:account.id
+          }
+        })
+        return {success:false, message:'Account Expired Please Reconnect', accessToken:''}
+      };
+      return {success:true, message:'accessToken is valid', accessToken :account.access_token};
+    } catch (error) {
+      this.logger.error(`an error occured while validating accessToken : ${error}`);
+      throw new ApiError(500, "internal server error")
+    }
+  }
+
+  async flagPostSuccess( postid:string, linkedin_post_id:string,){
+    try {
+      return await this.prisma.platformPost.update({
+        where:{
+          id:postid
+        },
+        data:{
+          status:'POSTED',
+          platform_post_id:linkedin_post_id,
+          platform_post_url: `https://www.linkedin.com/feed/update/${linkedin_post_id}/ ` 
+        }
+      })
+    } catch (error) {
+      this.logger.error(`failed to update flag ${error}`);
+      throw new ApiError(500, 'internal server error')
     }
   }
 }

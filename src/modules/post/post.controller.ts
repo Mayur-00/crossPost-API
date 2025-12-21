@@ -6,6 +6,7 @@ import {
   getPostSchema,
   multerFileSchema,
   publishPostToMultiplePlatfromsSchema,
+  publishPostToMultiplePlatfromsSchemaQueued,
 } from './post.dto.js';
 import { PostService } from './post.services.js';
 import { uploadImageToCloudinary } from '../../utils/imageUploader.js';
@@ -15,6 +16,8 @@ import { ApiError } from '../../utils/apiError.js';
 import { Multer } from 'multer';
 import { XServices } from '../x/x.services.js';
 import { TweetDbRecord } from '../x/x.dto.js';
+import { linkedinQueue, XQueue } from '../../queues/queues.js';
+import { jobBody } from '../../workers/worker.types.js';
 
 export class PostController {
   constructor(
@@ -92,6 +95,7 @@ export class PostController {
         switch (platform) {
           case 'LINKEDIN':
             const linkedinAccount = await this.linkedinServices.getUserAccount(req.user.id);
+
             let linkedinPostid;
             if (imageFile) {
               const registerImageResponse = await this.linkedinServices.registerImageUpload(
@@ -130,9 +134,9 @@ export class PostController {
             const linkedinPost = await this.linkedinServices.createLinkedinPostDatabaseRecord(
               req.user.id,
               post.id,
-              linkedinAccount.id,
+              'POSTED',
               linkedinPostid,
-              new Date(Date.now()),
+              new Date(Date.now()) ,
             );
             result.linkedin = { success: true, data: linkedinPost };
             break;
@@ -166,8 +170,8 @@ export class PostController {
             const data: TweetDbRecord = {
               ownerId: req.user.id,
               postId: post.id,
+              status:'POSTED',
               tweetId: response.data.id,
-              xAccountId: xAccount.id,
             };
             await this.xServices.createTweetDbRecord(data);
 
@@ -190,6 +194,81 @@ export class PostController {
 
     res.status(200).json(
       new ApiResponse(200, result, 'Post published to platforms'),
+    );
+
+    }
+  );
+  publishPostMultiplePlatformsQueued: RequestHandler = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { content, platforms, imageLink, imageMimeType } = publishPostToMultiplePlatfromsSchemaQueued.parse(req.body);
+
+      if (!req.user) {
+        this.logger.error('UnAuthorized Request');
+        throw new ApiError(401, 'You Are Not Authorized');
+      }
+ 
+
+      const post = await this.postServices.createPost(
+        content,
+        imageLink || '',
+        req.user.id,
+        imageMimeType || ''
+      );
+
+
+
+
+
+      for (const platform of platforms) {
+        switch (platform) {
+          case 'LINKEDIN':
+           const createLinkedinPost = await this.linkedinServices.createLinkedinPostDatabaseRecord(req.user.id, post.id, 'PENDING', '', new Date(Date.now()));
+           if(!createLinkedinPost){
+            this.logger.error(`internal server error`);
+            throw new ApiError(500, 'internal server error')
+           };
+          
+           const account = await this.linkedinServices.getUserAccount(req.user.id);
+
+           const validateAccount = await this.linkedinServices.validateAccessToken(account);
+           if(!validateAccount.success){
+            this.logger.error('account expired');
+            throw new ApiError(401, 'Account Expired');
+           };
+           const jobData : jobBody={
+            postId:post.id,
+            userid:req.user.id,
+            platform_post_id:createLinkedinPost.id
+           };
+
+           linkedinQueue.add('linkedin-post', jobData)
+            break;
+          case 'X':
+            const createXTweet = await this.xServices.createTweetDbRecord({postId:post.id, ownerId:req.user.id, status:'PENDING',});
+            const xaccount = await this.xServices.getActiveXAccount(req.user.id);
+           const validateXAccessToken = await this.xServices.validateAccessToken(xaccount!);
+            const xJobData : jobBody={
+            postId:post.id,
+            userid:req.user.id,
+            platform_post_id:createXTweet.id
+           };
+
+
+          XQueue.add('x-post', xJobData);
+            break;
+
+           default:
+            this.logger.error('post queue instertion failed')
+           throw new ApiError(500, 'post queue insertion failed')
+        }
+      };
+
+      this.logger.info('Post Queued to platforms', {
+    
+    });
+
+    res.status(200).json(
+      new ApiResponse(203, 'post queued successFully'),
     );
 
     }

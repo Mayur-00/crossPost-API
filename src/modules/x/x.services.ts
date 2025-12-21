@@ -212,26 +212,27 @@ export class XServices {
   }
   async publishTweet(text: string, mediaIds: string[], accessToken: string): Promise<TweetResponse> {
     try {
-     const payload: any = { text };
+const payload: any = { text };
 
+    // Only add media if mediaIds exist and array is not empty
     if (mediaIds && mediaIds.length > 0) {
       payload.media = {
-        media_ids: mediaIds,   // ✔ CORRECT FIELD
+        media_ids: mediaIds,
       };
     }
 
-      const tweet = await this.httpClient.post<TweetResponse>(
-        'https://api.x.com/2/tweets',
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
+    const tweet = await this.httpClient.post<TweetResponse>(
+      'https://api.x.com/2/tweets',
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
-      );
+      },
+    );
 
-      return tweet.data;
+    return tweet.data;
     } catch (error) {
       this.logger.error(`an error occured while publishing the tweet ${error}`);
       throw new ApiError(500, 'publishing tweets failed');
@@ -294,11 +295,10 @@ export class XServices {
         data: {
           owner_id: data.ownerId,
           post_id: data.postId,
-          account_id: data.xAccountId,
           platform: 'X',
-          platform_post_id: data.tweetId,
-          platform_post_url: `https://x.com/i/web/status/${data.tweetId}`,
-          status: 'POSTED',
+          platform_post_id: data.tweetId || '',
+          platform_post_url: `https://x.com/i/web/status/${data.tweetId}` || '',
+          status: data.status,
           postedAt: new Date(Date.now()),
         },
       });
@@ -308,5 +308,28 @@ export class XServices {
       this.logger.error('an error occrred while creating db record', { error: error });
       throw new ApiError(500, 'internal server error');
     }
+  };
+
+  async flagTweetSuccess(postid:string, x_tweet_id:string){
+    try {
+      return this.prismaClient.platformPost.update({
+        where:{
+          id:postid
+        },
+        data:{
+          status:'POSTED',
+          platform_post_id:x_tweet_id,
+          platform_post_url: `https://x.com/i/web/status/${x_tweet_id}` 
+        }
+      })
+    } catch (error) {
+      this.logger.error(`failed to flag tweet ${error}`);
+      throw new ApiError(500, 'internal server error')
+    }
   }
-}
+};
+
+
+
+
+  
