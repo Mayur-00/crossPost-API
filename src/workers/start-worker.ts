@@ -5,8 +5,9 @@
  */
 
 import dotenv from 'dotenv';
-import { linkedinWorker } from '../linkedin/linkedin.worker.js';
-import logger from '../../config/logger.config.js';
+import logger from '../config/logger.config.js';
+import { postWorker } from './worker.js';
+
 
 dotenv.config();
 
@@ -16,13 +17,13 @@ logger.info('🚀 Starting LinkedIn Post Worker on separate process...');
 // Handle shutdown gracefully
 process.on('SIGINT', async () => {
     logger.info('SIGINT received, shutting down LinkedIn worker gracefully...');
-    await linkedinWorker.close();
+    await postWorker.close();
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
     logger.info('SIGTERM received, shutting down LinkedIn worker gracefully...');
-    await linkedinWorker.close();
+    await postWorker.close();
     process.exit(0);
 });
 

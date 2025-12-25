@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import { Post, PrismaClient } from '../../generated/prisma/client.js';
+import { Post, PostStatus, PrismaClient } from '../../generated/prisma/client.js';
 import { ApiError } from '../../utils/apiError.js';
 
 export class PostService {
@@ -8,14 +8,14 @@ export class PostService {
     private logger: Logger,
   ) {}
 
-  async createPost(content: string, media_url: string, user_id: string, mimeType:string) {
+  async createPost(content: string, media_url: string, user_id: string, mimeType:string, status:PostStatus) {
     try {
       const post = await this.prisma.post.create({
         data: {
           content: content || "",
           mediaUrl: media_url ||" ",
           owner_id: user_id,
-          status: 'CREATED',
+          status: status,
           mediaType:mimeType
         },
       });
@@ -104,6 +104,22 @@ export class PostService {
     } catch (error) {
       this.logger.error("Couldn't get The Posts ", { error: error });
       throw new ApiError(500, 'Internal Server Error');
+    }
+  }
+
+  async updatePostPublished (postid:string){
+    try {
+      return await this.prisma.post.update({
+        where:{
+          id:postid
+        },
+        data:{
+          status:'UPLOADED'
+        }
+      })
+    } catch (error) {
+      this.logger.error(`post updation failed with error ${error}`)
+      throw new ApiError(500, 'internal server error')
     }
   }
 }

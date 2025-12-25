@@ -295,6 +295,7 @@ const payload: any = { text };
         data: {
           owner_id: data.ownerId,
           post_id: data.postId,
+          account_id:data.accountId,
           platform: 'X',
           platform_post_id: data.tweetId || '',
           platform_post_url: `https://x.com/i/web/status/${data.tweetId}` || '',

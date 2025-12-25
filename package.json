@@ -11,6 +11,8 @@
     "worker:x:prod": "node ./dist/workers/x/start-worker.js",
     "worker:linkedin": "tsx watch ./src/workers/linkedin/start-worker.ts",
     "worker:linkedin:prod": "node ./dist/workers/linkedin/start-worker.js",
+    "worker:post": "tsx watch ./src/workers/start-worker.ts",
+    "worker:post:prod": "node ./dist/workers/start-worker.js",
     "workers": "concurrently \"npm run worker:x\" \"npm run worker:linkedin\"",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix"

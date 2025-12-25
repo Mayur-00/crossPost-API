@@ -208,4 +208,25 @@ export class UserServices {
       }
     })
   }
+
+  async updateUserWithImage (userid:string, imageUrl:string){
+    return await this.prisma.user.update({
+      where:{
+        id:userid
+      },
+      data:{
+        profile_picture:imageUrl,
+      }
+    })
+  }
+  async updateUsersName (userid:string, name:string){
+    return await this.prisma.user.update({
+      where:{
+        id:userid
+      },
+      data:{
+        name:name
+      }
+    })
+  }
 }

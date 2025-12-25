@@ -30,6 +30,7 @@ export interface TweetResponse {
 export interface TweetDbRecord {
   ownerId:string;
   postId:string;
+  accountId:string
   status:PlatfromPostStatus
   tweetId?:string
   

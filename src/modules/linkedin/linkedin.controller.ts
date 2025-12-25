@@ -29,7 +29,7 @@ export class LinkedinController {
     const url = this.linkedinService.generateAuthUrl(state);
 
     res.status(200).json(new ApiResponse(200, url, 'Session Started'))
-  })
+  });
 
   handleLinkedinAuthCallback: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
     const { code, state, error, error_description } = LinkedInCallbackSchema.parse(req.query);
@@ -118,6 +118,7 @@ export class LinkedinController {
         userid,
         post.id,
         account.id,
+        'POSTED',
         linkedinPostId,
         new Date(Date.now()),
       );
@@ -138,6 +139,7 @@ export class LinkedinController {
       userid,
       post.id,
       account.id,
+      'POSTED',
       linkedinPostId,
       new Date(Date.now()),
     );

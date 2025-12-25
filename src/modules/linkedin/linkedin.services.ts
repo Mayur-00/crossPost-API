@@ -364,6 +364,7 @@ export class linkedinServices {
   async createLinkedinPostDatabaseRecord(
     user_id: string,
     post_id: string,
+    account_id:string,
     status:PlatfromPostStatus,
     linkedin_post_id?: string,
     posted_at?: Date,
@@ -373,6 +374,7 @@ export class linkedinServices {
         data: {
           post_id: post_id,
           owner_id: user_id,
+          account_id:account_id,
           platform: 'LINKEDIN',
           platform_post_id: linkedin_post_id || '',
           platform_post_url: `https://www.linkedin.com/feed/update/${linkedin_post_id}/ ` || '',
@@ -395,11 +397,13 @@ export class linkedinServices {
         where: {
           owner_id: userid,
           platform: 'LINKEDIN',
+          isActive:true,
+          isExpired:false
         },
       });
       if (!user) {
         this.logger.error('account not found');
-        throw new ApiError(404, 'account not found');
+        throw new ApiError(404, 'account not found , please reconnect to linkedin ');
       }
 
       this.logger.info('Account Found ');
@@ -443,9 +447,13 @@ export class linkedinServices {
       const isExpired = !account.token_expiry || account.token_expiry.getTime() <= now;
 
       if(isExpired){
-        await this.prisma.socialAccount.delete({
+        await this.prisma.socialAccount.update({
           where:{
             id:account.id
+          },
+          data:{
+            isActive:false,
+            isExpired:true
           }
         })
         return {success:false, message:'Account Expired Please Reconnect', accessToken:''}

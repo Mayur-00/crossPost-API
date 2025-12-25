@@ -18,5 +18,11 @@ export type loginUserDto = z.infer<typeof loginSchema>;
 export const googleLoginSchema = z.object({
   token: z.string(),
 });
+export const updateUserSchema = z.object({
+  name:z.string().min(3).max(10),
+});
+export const updateProfilePictureSchema = z.object({
+  imageLink:z.string().min(3).max(10),
+});
 
 export type googleLoginDto = z.infer<typeof googleLoginSchema>;

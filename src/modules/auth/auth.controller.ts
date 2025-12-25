@@ -3,10 +3,11 @@ import { UserServices } from './auth.services.js';
 
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { RequestHandler, Request, Response } from 'express';
-import { googleLoginSchema, loginSchema, registerUserSchema } from './auth.dto.js';
+import { googleLoginSchema, loginSchema, registerUserSchema, updateProfilePictureSchema, updateUserSchema } from './auth.dto.js';
 import { jwtToken } from '../shared/jwt/jwtCookie.service.js';
 import { ApiResponse } from '../../utils/apiResponse.js';
 import { ApiError } from '../../utils/apiError.js';
+import { uploadImageToCloudinary } from '../../utils/imageUploader.js';
 
 export class AuthController {
   constructor(
@@ -277,4 +278,35 @@ export class AuthController {
       .clearCookie('refreshToken', options)
       .json(new ApiResponse(200, {}, 'Account Deleted Successfully'));
   });
+
+  handleProfilePictureUpdate:RequestHandler = asyncHandler(async(req:Request, res:Response) => {
+
+    const {imageLink}= updateProfilePictureSchema.parse(req.body)
+
+      const updatedUser = await this.userServices.updateUserWithImage(req.user?.id!, imageLink,);
+
+      if(!updatedUser){
+        this.logger.error(`failed to update the profile picture`)
+      };
+
+      res.status(200).json(new ApiResponse(200, {}, 'profile picture updated'))
+
+  })
+  handleProfileNameUpdate:RequestHandler = asyncHandler(async(req:Request, res:Response) => {
+
+    const {name}= updateUserSchema.parse(req.body);
+
+    if(!req.user){
+      throw new ApiError(401, 'UnAuthorized')
+    }
+
+      const updatedUser = await this.userServices.updateUsersName(req.user.id, name );
+
+      if(!updatedUser){
+        this.logger.error(`failed to update the profile picture`)
+      };
+
+      res.status(200).json(new ApiResponse(200, {}, 'profile name updated'))
+
+  })
 }

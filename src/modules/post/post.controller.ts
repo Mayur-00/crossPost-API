@@ -16,7 +16,7 @@ import { ApiError } from '../../utils/apiError.js';
 import { Multer } from 'multer';
 import { XServices } from '../x/x.services.js';
 import { TweetDbRecord } from '../x/x.dto.js';
-import { linkedinQueue, XQueue } from '../../queues/queues.js';
+import { linkedinQueue, postQueue, XQueue } from '../../queues/queues.js';
 import { jobBody } from '../../workers/worker.types.js';
 
 export class PostController {
@@ -42,6 +42,7 @@ export class PostController {
       media_url,
       req.user.id!,
       media_file.mimetype,
+      'CREATED'
     );
 
     this.logger.info('post created successfully', { postId: post.id });
@@ -72,7 +73,6 @@ export class PostController {
       const { content, platforms } = publishPostToMultiplePlatfromsSchema.parse(req.body);
       const imageFile = req.file as Express.Multer.File;
 
-
       if (!req.user) {
         this.logger.error('UnAuthorized Request');
         throw new ApiError(401, 'You Are Not Authorized');
@@ -86,7 +86,8 @@ export class PostController {
         content,
         imageUrl || '',
         req.user.id,
-        imageFile? imageFile.mimetype : '',
+        imageFile ? imageFile.mimetype : '',
+        'CREATED'
       );
 
       const result: Record<string, any> = {};
@@ -134,9 +135,10 @@ export class PostController {
             const linkedinPost = await this.linkedinServices.createLinkedinPostDatabaseRecord(
               req.user.id,
               post.id,
+              linkedinAccount.id,
               'POSTED',
               linkedinPostid,
-              new Date(Date.now()) ,
+              new Date(Date.now()),
             );
             result.linkedin = { success: true, data: linkedinPost };
             break;
@@ -150,7 +152,7 @@ export class PostController {
             }
             const accessToken = await this.xServices.validateAccessToken(xAccount);
 
-            let mediaIds =[];
+            let mediaIds = [];
 
             if (imageFile) {
               const mediaid = await this.xServices.uploadMedia(
@@ -158,9 +160,9 @@ export class PostController {
                 imageFile.buffer,
                 imageFile.mimetype,
               );
-              mediaIds.push(mediaid)
+              mediaIds.push(mediaid);
             }
-            this.logger.info(mediaIds)
+            this.logger.info(mediaIds);
             const response = await this.xServices.publishTweet(
               post.content || '',
               mediaIds,
@@ -170,7 +172,8 @@ export class PostController {
             const data: TweetDbRecord = {
               ownerId: req.user.id,
               postId: post.id,
-              status:'POSTED',
+              accountId: xAccount.id,
+              status: 'POSTED',
               tweetId: response.data.id,
             };
             await this.xServices.createTweetDbRecord(data);
@@ -178,99 +181,82 @@ export class PostController {
             result.x = { success: true, data: data };
             break;
 
-           default:
+          default:
             result[platform] = {
               success: false,
               error: 'Unknown platform',
-            };  
+            };
         }
-      };
+      }
 
       this.logger.info('Post published to platforms', {
-      postId: post.id,
-      platforms,
-      results: result,
-    });
+        postId: post.id,
+        platforms,
+        results: result,
+      });
 
-    res.status(200).json(
-      new ApiResponse(200, result, 'Post published to platforms'),
-    );
-
-    }
+      res.status(200).json(new ApiResponse(200, result, 'Post published to platforms'));
+    },
   );
   publishPostMultiplePlatformsQueued: RequestHandler = asyncHandler(
     async (req: Request, res: Response) => {
-      const { content, platforms, imageLink, imageMimeType } = publishPostToMultiplePlatfromsSchemaQueued.parse(req.body);
+      const { content, platforms, imageLink, imageMimeType, scheduledDate } =
+        publishPostToMultiplePlatfromsSchemaQueued.parse(req.body);
 
       if (!req.user) {
         this.logger.error('UnAuthorized Request');
         throw new ApiError(401, 'You Are Not Authorized');
       }
- 
 
-      const post = await this.postServices.createPost(
-        content,
-        imageLink || '',
-        req.user.id,
-        imageMimeType || ''
-      );
+      if (scheduledDate) {
+        const post = await this.postServices.createPost(
+          content,
+          imageLink || '',
+          req.user.id,
+          imageMimeType || '',
+          'SCHEDULED',
+        );
 
+        const now = new Date();
+        const delay = scheduledDate.getTime() - now.getTime();
 
-
-
-
-      for (const platform of platforms) {
-        switch (platform) {
-          case 'LINKEDIN':
-           const createLinkedinPost = await this.linkedinServices.createLinkedinPostDatabaseRecord(req.user.id, post.id, 'PENDING', '', new Date(Date.now()));
-           if(!createLinkedinPost){
-            this.logger.error(`internal server error`);
-            throw new ApiError(500, 'internal server error')
-           };
-          
-           const account = await this.linkedinServices.getUserAccount(req.user.id);
-
-           const validateAccount = await this.linkedinServices.validateAccessToken(account);
-           if(!validateAccount.success){
-            this.logger.error('account expired');
-            throw new ApiError(401, 'Account Expired');
-           };
-           const jobData : jobBody={
-            postId:post.id,
-            userid:req.user.id,
-            platform_post_id:createLinkedinPost.id
-           };
-
-           linkedinQueue.add('linkedin-post', jobData)
-            break;
-          case 'X':
-            const createXTweet = await this.xServices.createTweetDbRecord({postId:post.id, ownerId:req.user.id, status:'PENDING',});
-            const xaccount = await this.xServices.getActiveXAccount(req.user.id);
-           const validateXAccessToken = await this.xServices.validateAccessToken(xaccount!);
-            const xJobData : jobBody={
-            postId:post.id,
-            userid:req.user.id,
-            platform_post_id:createXTweet.id
-           };
-
-
-          XQueue.add('x-post', xJobData);
-            break;
-
-           default:
-            this.logger.error('post queue instertion failed')
-           throw new ApiError(500, 'post queue insertion failed')
+        if (delay < 0) {
+          throw new ApiError(401, 'Scheduled time must be in the future');
         }
+
+        const data: jobBody = {
+          platfroms: platforms,
+          postId: post.id,
+          userid: req.user.id,
+        };
+
+        postQueue.add('post', data, {
+          delay: delay,
+          jobId: post.id,
+        });
+
+          this.logger.info('Post Scheduled Successfuly');
+          res.status(200).json(new ApiResponse(203, 'Scheduled successFully'));
+
+      } else{
+        const post = await this.postServices.createPost(
+          content,
+          imageLink || '',
+          req.user.id,
+          imageMimeType || '',
+          'CREATED',
+        );
+
+         const data: jobBody = {
+        platfroms: platforms,
+        postId: post.id,
+        userid: req.user.id,
       };
 
-      this.logger.info('Post Queued to platforms', {
-    
-    });
-
-    res.status(200).json(
-      new ApiResponse(203, 'post queued successFully'),
-    );
-
-    }
+      postQueue.add('post', data, {jobId:post.id});
+          this.logger.info('Post Queued to platforms');
+          res.status(200).json(new ApiResponse(203, 'post queued successFully'));
+      }
+    },
   );
 }

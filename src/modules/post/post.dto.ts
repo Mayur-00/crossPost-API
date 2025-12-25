@@ -24,7 +24,8 @@ export const publishPostToMultiplePlatfromsSchemaQueued = z.object({
   content: z.string().min(2).max(280),
   platforms: z.array(z.enum(['LINKEDIN', 'X'])),
   imageLink:z.string().min(5).optional(),
-  imageMimeType:z.string().optional()
+  imageMimeType:z.string().optional(),
+  scheduledDate:z.date().optional()
 });
 
 

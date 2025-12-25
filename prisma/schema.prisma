@@ -23,13 +23,13 @@ datasource db {
 
  enum SocialPlatforms {
   LINKEDIN
-  LIKENDIN
   X
   FACEBOOK
  }
 
  enum PostStatus {
   CREATED
+  SCHEDULED
   UPLOADED
   PENDING
   DARFT 
@@ -86,6 +86,8 @@ datasource db {
 
   // relation
   owner User @relation(fields:[owner_id], references:[id], onDelete:Cascade)
+  platform_post PlatformPost[]
+  post_analytics PostAnalytic[]
 
 
   @@index([owner_id])
@@ -111,6 +113,7 @@ datasource db {
   id String @id @default(cuid())
   post_id String 
   owner_id String 
+  account_id String
   platform SocialPlatforms
   platform_post_id String?
   platform_post_url String?
@@ -122,6 +125,8 @@ datasource db {
 
   post Post @relation(fields:[post_id], references:[id], onDelete:Cascade)
   owner User @relation(fields:[owner_id], references:[id], onDelete:Cascade)
+  socialAccount SocialAccount @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  analytics PostAnalytic[]
 
   @@index([post_id])
  }
@@ -141,6 +146,23 @@ id            String   @id @default(cuid())
   @@index([ownerid])
   @@index([state])
  }
+
+model PostAnalytic {
+  id String @id @default(cuid())
+  account_id String
+  platform_post_id String
+  platform SocialPlatforms
+  likes Int
+  comments Int
+  reach Float
+  views Int
+  members_added Int
+  reshares Int
+  timestamp DateTime @default(now())
+
+  platform_post PlatformPost @relation(fields: [platform_post_id], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount @relation(fields: [account_id], references: [id], onDelete: Cascade)
+}
 
 
  

@@ -11,6 +11,7 @@ export function createAuthRoutes(controller: AuthController): Router {
   router.post('/login', controller.handleLogin);
   router.post('/refresh-access', controller.handleAccessTokenRefresh);
   router.get('/user', authorize, controller.user);
+  router.put('/user', authorize, controller.user);
   router.get('/logout', authorize, controller.handleLogout);
   router.get('/delete', authorize, controller.handleDeleteAccountRequest);
 

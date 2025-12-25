@@ -1,6 +1,15 @@
 
 export interface jobBody{
         postId:string;
-        platform_post_id:string;
-        userid?:string;
+        userid:string;
+        platfroms:any[]
 };
+
+export interface PostJobData{
+        postId:string;
+        userId:string;
+        content:string;
+        mediaUrl:string;
+        mediaType:string;
+};
+

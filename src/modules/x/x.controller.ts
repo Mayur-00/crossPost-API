@@ -107,6 +107,7 @@ export class XController {
     const data:TweetDbRecord ={
       ownerId:req.user.id,
       postId:post_id,
+      accountId:account.id,
       status:'POSTED',
       tweetId: response.data.id,
     }
