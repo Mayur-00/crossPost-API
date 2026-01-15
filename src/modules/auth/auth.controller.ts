@@ -49,12 +49,12 @@ export class AuthController {
 
       return res
         .status(200)
-        .cookie('accessToken', accessToken, options) // set the access token in the cookie
         .cookie('refreshToken', refreshToken, options) // set the refresh token in the cookie
+        .cookie('accessToken', accessToken, options) // set the refresh token in the cookie
         .json(
           new ApiResponse(
             200,
-            { user: updatedUser, accessToken, refreshToken }, // send access and refresh token in response if client decides to save them by themselves
+            { user: updatedUser }, // send access and refresh token in response if client decides to save them by themselves
             'User signin in successfully',
           ),
         );
@@ -97,7 +97,7 @@ export class AuthController {
 
     if (user) {
       this.logger.error('user already existst please login');
-      throw new ApiError(401, 'user already exists please login');
+      throw new ApiError(409, 'user already exists please login');
     }
 
     const newUser = await this.userServices.createUser(name, email, 'CREDENTIAL', password);
@@ -122,7 +122,7 @@ export class AuthController {
       .json(
         new ApiResponse(
           201,
-          { user: updatedUser, accessToken, refreshToken }, // send access and refresh token in response if client decides to save them by themselves
+          { user: updatedUser }, // send access and refresh token in response if client decides to save them by themselves
           'User registered successfully',
         ),
       );
@@ -165,7 +165,7 @@ export class AuthController {
       .json(
         new ApiResponse(
           200,
-          { user: updatedUser, accessToken, refreshToken }, // send access and refresh token in response if client decides to save them by themselves
+          { user: updatedUser}, // send access and refresh token in response if client decides to save them by themselves
           'User signin in successfully',
         ),
       );
@@ -246,7 +246,6 @@ export class AuthController {
           200,
           {
             accessToken,
-            refreshToken: refreshToken,
           },
           'accessToken refreshed',
         ),

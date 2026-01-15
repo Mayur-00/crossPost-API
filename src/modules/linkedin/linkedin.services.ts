@@ -68,6 +68,7 @@ export class linkedinServices {
   }
 
   generateAuthUrl(state: string):String {
+    this.logger.info(`clientID: ${this.Config.clientID} , redirectUri: ${this.Config.redirectUri}`)
     const params = new URLSearchParams({
       response_type: 'code',
       client_id:this.Config.clientID,
@@ -88,6 +89,7 @@ export class linkedinServices {
         clientSecretExists: !!this.Config.clientSecret,
         clientSecretLength: this.Config.clientSecret?.length,
         redirectUri: this.Config.redirectUri,
+        clientId: this.Config.clientID,
       });
       this.logger.info(`LinkedIn Config Check : ${data}`);
 
@@ -149,7 +151,7 @@ export class linkedinServices {
       }
 
       if (error.response?.status === 401) {
-        throw new ApiError(401, 'Invalid client credentials');
+        throw new ApiError(409, 'Invalid client credentials');
       }
 
       if (error.response?.status === 429) {
@@ -481,5 +483,21 @@ export class linkedinServices {
       this.logger.error(`failed to update flag ${error}`);
       throw new ApiError(500, 'internal server error')
     }
-  }
+  };
+  async isAlreadyPosted( postid:string, ){
+    try {
+       return  await this.prisma.platformPost.findFirst({
+        where:{
+          id:postid,
+          platform:'LINKEDIN',
+          status:'POSTED'
+          
+        }
+      });
+    } catch (error) {
+      this.logger.error(`failed to check ${error}`);
+      throw new ApiError(500, 'internal server error')
+    }
+  };
+
 }

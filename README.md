@@ -115,9 +115,8 @@ The API will be available at `http://localhost:5000`
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JavaScript
 - `npm start` - Start production server
-- `npm run worker:x` - Start X/Twitter background worker
-- `npm run worker:linkedin` - Start LinkedIn background worker
-- `npm run workers` - Start all workers concurrently
+- `npm run worker:dev-post` - Start dev posting background worker
+- `npm run worker:post` - Start posting background worker
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix ESLint issues
 
@@ -135,8 +134,8 @@ The API will be available at `http://localhost:5000`
 
 ### Posts (`/api/v1/post`)
 
-- `POST /create` - Create and publish post to multiple platforms (requires auth, file upload)
 - `POST /publish-post` - Queue post for publishing to multiple platforms (requires auth, file upload)
+- `GET /all` - Get all posts including all platfrom posts (requires auth)
 
 ### LinkedIn (`/api/v1/linkedin`)
 
@@ -194,7 +193,6 @@ The API will be available at `http://localhost:5000`
 ### SocialPlatforms
 - `LINKEDIN` - LinkedIn platform
 - `X` - X/Twitter platform
-- `FACEBOOK` - Facebook platform
 
 ## Key Features
 

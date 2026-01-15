@@ -15,33 +15,33 @@ declare global {
 }
 
 export const authorize: RequestHandler = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req, res, next) => {
+  
+
     const token = req.cookies?.accessToken || req.header('Authorization')?.replace('Bearer ', '');
 
-    if (!token) {
-      throw new ApiError(401, 'Unauthorized request');
+    let decoded: myJwtPayload;
+
+    try {
+      decoded = jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET!
+      ) as myJwtPayload;
+    } catch {
+      throw new ApiError(401, "Invalid or expired access token");
     }
 
-    
-      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as myJwtPayload;
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+    });
 
-      const user = await prisma.user.findUnique({
-        where: {
-          id: decoded.id,
-        },
-      });
+    if (!user) {
+      throw new ApiError(401, "Invalid access token");
+    }
 
-      if (!user) {
-        // Client should make a request to /api/v1/users/refresh-token if they have refreshToken present in their cookie
-        // Then they will get a new access token which will allow them to refresh the access token without logging out the user
-        throw new ApiError(401, 'Invalid access token or access token expired');
-      }
-
-      req.user = user;
-
-      next();
-    
-  },
+    req.user = user;
+    next();
+  }
 );
 
 export interface myJwtPayload extends jwt.JwtPayload {

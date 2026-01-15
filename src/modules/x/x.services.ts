@@ -126,7 +126,7 @@ export class XServices {
           owner_id: userId,
           platform: 'X',
           platform_userid: userInfo.data.id,
-          username: userInfo.data.username,
+          display_name: userInfo.data.username,
           profile_picture: userInfo.data.profile_image_url,
           access_token: tokenObj.access_token,
           token_expiry: new Date(Date.now() + tokenObj.expires_in * 1000),
@@ -327,7 +327,24 @@ const payload: any = { text };
       this.logger.error(`failed to flag tweet ${error}`);
       throw new ApiError(500, 'internal server error')
     }
-  }
+  };
+
+  async isAlreadyPosted( postid:string, ){
+    try {
+         return  await this.prismaClient.platformPost.findFirst({
+        where:{
+          id:postid,
+          platform:'X',
+          status:'POSTED'
+          
+        }
+         });
+
+    } catch (error) {
+      this.logger.error(`failed to check ${error}`);
+      throw new ApiError(500, 'internal server error')
+    }
+  };
 };
 
 

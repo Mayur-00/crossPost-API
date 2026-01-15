@@ -1,6 +1,8 @@
 import { Logger } from 'winston';
 import { Post, PostStatus, PrismaClient } from '../../generated/prisma/client.js';
 import { ApiError } from '../../utils/apiError.js';
+import { getSearchPostsDTO } from './post.dto.js';
+import { QUERY_TYPE } from './post.types.js';
 
 export class PostService {
   constructor(
@@ -8,15 +10,21 @@ export class PostService {
     private logger: Logger,
   ) {}
 
-  async createPost(content: string, media_url: string, user_id: string, mimeType:string, status:PostStatus) {
+  async createPost(
+    content: string,
+    media_url: string,
+    user_id: string,
+    mimeType: string,
+    status: PostStatus,
+  ) {
     try {
       const post = await this.prisma.post.create({
         data: {
-          content: content || "",
-          mediaUrl: media_url ||" ",
+          content: content || '',
+          mediaUrl: media_url || ' ',
           owner_id: user_id,
           status: status,
-          mediaType:mimeType
+          mediaType: mimeType,
         },
       });
 
@@ -38,7 +46,7 @@ export class PostService {
         data: {
           content: new_content,
           mediaUrl: new_media_url,
-          status:'UPLOADED'
+          status: 'UPLOADED',
         },
       });
     } catch (error) {
@@ -71,18 +79,17 @@ export class PostService {
         where: {
           id: post_id,
         },
-        include:{
-          platform_post : {
-            select:{
-              id:true,
-              platform_post_url:true,
-              platform:true,
-              status:true,
-              postedAt:true
-              
-            }
-          }
-        }
+        include: {
+          platform_post: {
+            select: {
+              id: true,
+              platform_post_url: true,
+              platform: true,
+              status: true,
+              postedAt: true,
+            },
+          },
+        },
       });
       this.logger.info('Post Fetched Successfully ');
       return post;
@@ -92,34 +99,108 @@ export class PostService {
     }
   }
 
-  async getAllPosts(user_id: string): Promise<Post[]> {
+  async getAllPosts(user_id: string, limit: number, skip: number) {
     try {
-      const posts = await this.prisma.post.findMany({
+      return await this.prisma.post.findMany({
         where: {
           owner_id: user_id,
         },
-      });
 
-      return posts;
+        include: {
+          platform_post: {
+            select: {
+              platform: true,
+              id: true,
+              platform_post_url: true,
+              status: true,
+            },
+          },
+        },
+        take: limit,
+        skip: skip,
+        orderBy: {
+          id: 'desc',
+        },
+      });
     } catch (error) {
       this.logger.error("Couldn't get The Posts ", { error: error });
       throw new ApiError(500, 'Internal Server Error');
     }
   }
+  async getPostsByQuery(
+    user_id: string,
+    query: string,
+    limit: number,
+    skip: number,
+    type: QUERY_TYPE,
+  ) {
+    try {
+      if (type === 'ALL') {
+        return await this.prisma.post.findMany({
+          where: {
+            owner_id: user_id,
+            content:query
+          },
 
-  async updatePostPublished (postid:string){
+          include: {
+            platform_post: {
+              select: {
+                platform: true,
+                id: true,
+                platform_post_url: true,
+                status: true,
+              },
+            },
+          },
+          take: limit,
+          skip: skip,
+          orderBy: {
+            id: 'desc',
+          },
+        });
+      } else {
+        return await this.prisma.post.findMany({
+          where: {
+            owner_id: user_id,
+            content:query,
+            status: type as unknown as PostStatus,
+          },
+
+          include: {
+            platform_post: {
+              select: {
+                platform: true,
+                id: true,
+                platform_post_url: true,
+                status: true,
+              },
+            },
+          },
+          take: limit,
+          skip: skip,
+          orderBy: {
+            id: 'desc',
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error("Couldn't get The Posts ", { error: error });
+      throw new ApiError(500, 'Internal Server Error');
+    }
+  }
+  async updatePostPublished(postid: string) {
     try {
       return await this.prisma.post.update({
-        where:{
-          id:postid
+        where: {
+          id: postid,
         },
-        data:{
-          status:'UPLOADED'
-        }
-      })
+        data: {
+          status: 'UPLOADED',
+        },
+      });
     } catch (error) {
-      this.logger.error(`post updation failed with error ${error}`)
-      throw new ApiError(500, 'internal server error')
+      this.logger.error(`post updation failed with error ${error}`);
+      throw new ApiError(500, 'internal server error');
     }
   }
 }

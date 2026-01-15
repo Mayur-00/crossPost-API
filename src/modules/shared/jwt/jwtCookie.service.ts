@@ -17,11 +17,11 @@ export class jwtToken {
       },
       process.env.ACCESS_TOKEN_SECRET,
       {
-        expiresIn: '7d',
+        expiresIn: '15min',
       },
     );
     const refreshToken = jwt.sign({ id: id }, process.env.REFRESH_TOKEN_SECRET, {
-      expiresIn: '20d',
+      expiresIn: '7d',
     });
     return { accessToken, refreshToken };
   };

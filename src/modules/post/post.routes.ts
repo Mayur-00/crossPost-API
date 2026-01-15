@@ -11,18 +11,18 @@ export function createPostRoutes(controller: PostController): Router {
 
 
   // Post creation (requires authentication and file upload)
-  
-  router.post(
-    '/create',
-    authorize,
-    upload.single('image'), 
-    controller.publishPostMultiplePlatforms,
-  );
+
   router.post(
     '/publish-post',
     authorize,
     upload.single('image'),
     controller.publishPostMultiplePlatformsQueued,
   );
+
+  //get all posts with pagination and limit
+  router.get("/all/posts", authorize, controller.getAllPosts);
+  // get posts by query endpoing  with pagination, limit, and type
+  router.get("/query/posts", authorize, controller.getSearchedPosts);
+
   return router;
 }

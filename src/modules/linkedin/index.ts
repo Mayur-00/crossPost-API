@@ -12,7 +12,7 @@ dotenv.config()
 export const LinkedinService = new linkedinServices(prisma, logger, axios, {
   clientID: process.env.LINKEDIN_CLIENT_ID!,
   clientSecret: process.env.LINKEDIN_PRIMARY_CLIENT_SECRET!,
-  redirectUri: 'http://localhost:5000/api/v1/linkedin/callback',
+  redirectUri: process.env.LINKEDIN_REDIRECT_URI!,
 });
 
 export const postServices = new PostServices(prisma, logger);

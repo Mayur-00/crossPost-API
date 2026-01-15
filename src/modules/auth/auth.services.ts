@@ -53,12 +53,22 @@ export class UserServices {
         include: {
           connected_accounts: {
             select: {
+              id:true,
               platform: true,
               display_name: true,
               profile_picture: true,
               username: true,
+              isActive:true,
+              isExpired:true
             },
           },
+          _count:{
+            select:{
+              posts:true,
+              platform_post:true,
+              connected_accounts:true
+            }
+          }
         },
       });
     } catch (error) {
@@ -82,7 +92,6 @@ export class UserServices {
       throw new ApiError(500, 'internal server error');
     }
   }
-
   async createUser(
     name: string,
     email: string,
@@ -147,7 +156,6 @@ export class UserServices {
       throw new ApiError(500, 'internal server error');
     }
   }
-
   async updateUsersRefreshToken(userid: string, refreshToken: string): Promise<User> {
     try {
       return await this.prisma.user.update({
@@ -184,7 +192,6 @@ export class UserServices {
       throw new ApiError(500, 'internal server error');
     }
   }
-
   async verifyRefreshToken(refreshToken: string) {
     try {
       return (await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!)) as myJwtPayload;
@@ -208,7 +215,6 @@ export class UserServices {
       }
     })
   }
-
   async updateUserWithImage (userid:string, imageUrl:string){
     return await this.prisma.user.update({
       where:{

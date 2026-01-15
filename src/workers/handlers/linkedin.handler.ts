@@ -11,6 +11,12 @@ export class linkedinHandler {
 
     try {
       // Get account
+      const isAlreadyPosted = await this.linkedinServices.isAlreadyPosted(postId);
+      if(isAlreadyPosted){
+        this.logger.info('post is already posted on linkedin')
+        return;
+      }
+
       const account = await this.linkedinServices.getUserAccount(userId);
       if (!account) {
         throw new Error('No active LinkedIn account found');
@@ -67,6 +73,8 @@ export class linkedinHandler {
         publishPost.id,
         new Date()
       );
+
+      
 
       this.logger.info(`post successfully published to LinkedIn ${postId}`);
       return { success: true, platformPostId: platformPost.id };

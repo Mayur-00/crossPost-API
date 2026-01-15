@@ -9,9 +9,9 @@ export function createAuthRoutes(controller: AuthController): Router {
   router.post('/google', controller.handleGoogleLogin);
   router.post('/register', controller.handleRegister);
   router.post('/login', controller.handleLogin);
-  router.post('/refresh-access', controller.handleAccessTokenRefresh);
+  router.post('/refresh', controller.handleAccessTokenRefresh);
   router.get('/user', authorize, controller.user);
-  router.put('/user', authorize, controller.user);
+  router.put('/user', authorize, controller.handleProfileNameUpdate);
   router.get('/logout', authorize, controller.handleLogout);
   router.get('/delete', authorize, controller.handleDeleteAccountRequest);
 

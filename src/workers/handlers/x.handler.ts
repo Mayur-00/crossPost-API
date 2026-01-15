@@ -1,16 +1,24 @@
-import { Logger } from "winston";
-import { XServices } from "../../modules/x/x.services.js";
-import { PostJobData } from "../worker.types.js";
+import { Logger } from 'winston';
+import { XServices } from '../../modules/x/x.services.js';
+import { PostJobData } from '../worker.types.js';
 
 export class Xhandler {
-    
-    constructor(private xServices: XServices, private logger:Logger){}
+  constructor(
+    private xServices: XServices,
+    private logger: Logger,
+  ) {}
 
-      async handle(jobData: PostJobData): Promise<any> {
+  async handle(jobData: PostJobData): Promise<any> {
     const { postId, userId, content, mediaUrl, mediaType } = jobData;
 
     try {
       // Get account
+
+      const isAlreadyPosted = await this.xServices.isAlreadyPosted(postId);
+      if (isAlreadyPosted) {
+        this.logger.info('post is already posted on x');
+        return;
+      }
       const account = await this.xServices.getActiveXAccount(userId);
       if (!account) {
         throw new Error('No active X account found');
@@ -26,7 +34,7 @@ export class Xhandler {
         const mediaId = await this.xServices.uploadMedia(
           accessToken,
           buffer,
-          mediaType || 'image/jpeg'
+          mediaType || 'image/jpeg',
         );
         if (mediaId) mediaIds.push(mediaId);
       }
@@ -35,7 +43,7 @@ export class Xhandler {
       const response = await this.xServices.publishTweet(content, mediaIds, accessToken);
 
       // Save to DB
-    const platformPost =   await this.xServices.createTweetDbRecord({
+      const platformPost = await this.xServices.createTweetDbRecord({
         ownerId: userId,
         postId,
         accountId: account.id,
@@ -49,6 +57,5 @@ export class Xhandler {
       this.logger.error(`publishing post failed with error : ${error}`);
       throw error;
     }
-  };
-
-};
+  }
+}

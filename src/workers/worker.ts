@@ -41,7 +41,7 @@ export const postWorker = new Worker<jobBody>('post', (
                       const linkedinPublishResponse = await lnkHandler.handle(linkedinJobData);
 
                       
-
+                     
                       logger.info(`linkedin post published Successfully`)
                         break;
 

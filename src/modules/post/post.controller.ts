@@ -4,6 +4,8 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import {
   createPostSchema,
   getPostSchema,
+  getPostsSchema,
+  getSearchPostsSchema,
   multerFileSchema,
   publishPostToMultiplePlatfromsSchema,
   publishPostToMultiplePlatfromsSchemaQueued,
@@ -16,7 +18,7 @@ import { ApiError } from '../../utils/apiError.js';
 import { Multer } from 'multer';
 import { XServices } from '../x/x.services.js';
 import { TweetDbRecord } from '../x/x.dto.js';
-import { linkedinQueue, postQueue, XQueue } from '../../queues/queues.js';
+import { postQueue } from '../../queues/queues.js';
 import { jobBody } from '../../workers/worker.types.js';
 
 export class PostController {
@@ -67,7 +69,32 @@ export class PostController {
 
     res.status(200).json(new ApiResponse(201, post, 'success'));
   });
+  getAllPosts: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new ApiError(401, 'Unauthorized');
+    };
+    const {limit,skip} = getPostsSchema.parse(req.query);
 
+    const posts = await this.postServices.getAllPosts(req.user.id, limit, skip);
+
+
+    this.logger.info(`all posts fetched successfully, total post ${posts.length}`);
+
+    res.status(200).json(new ApiResponse(200, posts, 'success'));
+  });
+  getSearchedPosts: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new ApiError(401, 'Unauthorized');
+    };
+    const {limit,skip, query, type} = getSearchPostsSchema.parse(req.query);
+
+    const posts = await this.postServices.getPostsByQuery(req.user.id,query, limit, skip, type);
+
+
+    this.logger.info(` posts fetched successfully, total post ${posts.length}`);
+
+    res.status(200).json(new ApiResponse(200, posts, 'success'));
+  });
   publishPostMultiplePlatforms: RequestHandler = asyncHandler(
     async (req: Request, res: Response) => {
       const { content, platforms } = publishPostToMultiplePlatfromsSchema.parse(req.body);
